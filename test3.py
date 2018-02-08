@@ -1,6 +1,7 @@
 #-*-coding:utf-8-*- #编码声明，不要忘记！
 import random
 
+import re
 import requests  #这里使用requests，小脚本用它最合适！
 
 import codecs
@@ -26,8 +27,7 @@ dict_id_name = {}
 
 main_url = 'https://www.douban.com'
 raw_cookies = [
-    '__utmc=30149280; ck=H9Il; __utmz=30149280.1514993519.3.2.utmcsr=douban.com|utmccn=(referral)|utmcmd=referral|utmcct=/accounts/login; ll=108288; _vwo_uuid_v2=E90AE2022436CBF2CEEED90E00046AAF|b2852a314962cc64ec7da44db1f5de1c; bid=JfD9o8vzOyE; __utma=30149280.364165925.1513543666.1517858156.1517881884.9; ue=zhangzhao199323@yahoo.com.cn; gr_user_id=763ad491-bf3c-4d14-a97b-44bf1966a296; __utmv=30149280.17360; ps=y; dbcl2=173607767:0ToXQ/kCi/4; ct=y; __utmb=30149280.2.10.1517881884; __utmt=1; _pk_ref.100001.8cb4=%5B%22%22%2C%22%22%2C1517881884%2C%22https%3A%2F%2Fwww.baidu.com%2Flink%3Furl%3D_RxfZwmGoUvBiqis7kpMV6JbGA14SMGdnDFt2kMv5pBXdtQuiIFXTg1rnQN6oc9n%26wd%3D%26eqid%3Dedc80f050001da45000000035a77ceab%22%5D; _pk_id.100001.8cb4=38273b39dc5d7a3d.1513543666.8.1517881884.1517858191.; _pk_ses.100001.8cb4=*',
-    'll="108288"; bid=mCEK2EAt_J4; __yadk_uid=Z914VtOVBusejcOvRDCF5zwkGYe8uNYJ; push_noty_num=0; push_doumail_num=0; __utmc=30149280; __utmz=30149280.1517854308.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utmv=30149280.17361; ap=1; ps=y; __utma=30149280.944334073.1517854308.1517854308.1517857862.2; dbcl2="173611196:ywTKV4HJgZY"; ck=-cHY; _pk_id.100001.8cb4=a252f16f265a0f30.1517854257.4.1517881865.1517861420.; _pk_ses.100001.8cb4=*'
+   'll="108288"; bid=mCEK2EAt_J4; __yadk_uid=Z914VtOVBusejcOvRDCF5zwkGYe8uNYJ; push_noty_num=0; push_doumail_num=0; __utmc=30149280; __utmz=30149280.1517854308.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utmv=30149280.17361; ap=1; ps=y; ct=y; __utma=30149280.944334073.1517854308.1517887175.1518091831.5; _pk_ref.100001.8cb4=%5B%22%22%2C%22%22%2C1518101756%2C%22https%3A%2F%2Faccounts.douban.com%2Fsafety%2Funlock_sms%2Fresetpassword%3Fconfirmation%3D92baa119df4d0a89%26alias%3D%22%5D; _pk_ses.100001.8cb4=*; dbcl2="173611196:1ZSDfofOx30"; ck=tlHg; _pk_id.100001.8cb4=a252f16f265a0f30.1517854257.12.1518101765.1518093275.'
 ]
 
 headers = [
@@ -108,6 +108,9 @@ def follow_crawler(url, info_follow, cookie, header, usr_queue, dict_id_name, tm
     except:
         print page_follow.text
 
+    #count_number = tree.xpath('//span[@class="count"]/text()')
+    #print "关注数量有"+re.findall(r"\d*", count_number)
+
     for x in intro_raw:
         tmp_follow_name = x.xpath('@href')[0].split('/')[4]
         tmp_nick_name = x.xpath('text()')[0]
@@ -119,7 +122,9 @@ def follow_crawler(url, info_follow, cookie, header, usr_queue, dict_id_name, tm
     info_next = tree.xpath('//div[@class="paginator"]/span[@class="next"]/link/@href')
     if len(info_next) == 1:
         pause()
-        return follow_crawler(info_next[0], info_follow, cookie, header, usr_queue, dict_id_name)
+        return info_next[0]
+    else:
+        return ''
 
     
 def book_crawler(url, cookie, header, visited_book, book_list):
@@ -154,7 +159,9 @@ def book_crawler(url, cookie, header, visited_book, book_list):
     info_next = tree.xpath('//div[@class="paginator"]/span[@class="next"]/link/@href')
     if len(info_next) == 1:
         pause()
-        book_crawler(info_next[0], cookie, header, visited_book, book_list)
+        return info_next[0]
+    else:
+        return ''
 
 def movie_crawler(url,cookie, header, visited_movie, movie_list):
     if url[0] == '/':
@@ -192,16 +199,17 @@ def movie_crawler(url,cookie, header, visited_movie, movie_list):
     info_next = tree.xpath('//div[@class="paginator"]/span[@class="next"]/link/@href')
     if len(info_next) == 1:
         pause()
-
-        movie_crawler(info_next[0], cookie, header, visited_movie, movie_list)
+        return info_next[0]
+    else:
+        return ''
 
 def SelectCookie():
-    cookies = raw_cookies[random.randint(0,1)]
+    cookies = raw_cookies[0]
     cookie= {}
     for line in cookies.split(';'):
         key, value = line.split("=", 1)
         cookie[key] = value #一些格式化操作，用来装载cookies
-    return cookie,headers[random.randint(0,1)]
+    return cookie,headers[0]
 
 def crawler():
     #豆瓣模拟登录，最简单的是cookie，会这个方法，80%的登录网站可以搞定
@@ -226,6 +234,8 @@ def crawler():
 
             info_follow = []
             info_followed = []
+            book_list = []
+            movie_list = []
             info_movie = {}
             info_book = {}
 
@@ -234,35 +244,66 @@ def crawler():
             url_movie = url['movie']+tmp_usr+'/collect'
             url_book = url['book']+tmp_usr+'/collect'
 
-            # 处理关注者
-            cookie, header = SelectCookie()
-            #header = {}
+            try:
+                # 处理关注者
+                while url_follow != '':
+                    cookie, header = SelectCookie()
+                    url_follow = follow_crawler(url_follow, info_follow, cookie, header, usr, dict_id_name,tmp_usr)
 
-            follow_crawler(url_follow, info_follow, cookie, header, usr, dict_id_name,tmp_usr)
+
+                #处理被关注者
+                while url_followed != '':
+                    cookie, header = SelectCookie()
+                    url_followed = follow_crawler(url_followed, info_followed, cookie, header, usr, dict_id_name)
+
+                #处理看过的图书及其评分
+                while url_book != '':
+                    cookie, header = SelectCookie()
+                    url_book = book_crawler(url_book, cookie, header, visited_book, book_list)
+
+                #处理看过的电影及其评分
+                while url_movie != '':
+                    cookie, header = SelectCookie()
+                    url_movie = movie_crawler(url_movie, cookie, header, visited_movie, movie_list)
+            except:
+                print '！！！！！！！！！！！出现异常！！！！！！！！！！'
+                usr_info = {'id': tmp_usr, 'name': dict_id_name[tmp_usr]}
+                if url_follow == '':
+                    usr_info['follow'] = info_follow
+                else:
+                    print '抓取关注人员列表异常'
+
+                if url_followed == '':
+                    usr_info['follow'] = url_followed
+                else:
+                    print '抓取被关注人员列表异常'
+
+                if url_book == '':
+                    usr_info['book'] = url_book
+                else:
+                    print '抓取图书列表异常'
+
+                if movie_list == '':
+                    usr_info['movie'] = movie_list
+                else:
+                    print '抓取电影列表异常'
+                usr_json = json.dumps(usr_info, ensure_ascii=False)
+                fout_error = codecs.open('error_info.txt', 'a', 'utf_8_sig')
+                fout_error.write(usr_json + '\n')
+                fout_error.close()
 
 
-            #处理被关注者
-            cookie, header = SelectCookie()
-            follow_crawler(url_followed, info_followed, cookie, header, usr, dict_id_name)
 
-            #处理看过的图书及其评分
-            cookie, header = SelectCookie()
-            book_list = []
-            book_crawler(url_book, cookie, header, visited_book, book_list)
 
-            #处理看过的电影及其评分
-            cookie, header = SelectCookie()
-            movie_list = []
-            movie_crawler(url_movie, cookie, header, visited_movie, movie_list)
+            else:
+                usr_info = {'id': tmp_usr, 'name': dict_id_name[tmp_usr], 'follow': info_follow, 'followed': info_followed, 'movie': movie_list, 'book': book_list}
+                usr_json = json.dumps(usr_info, ensure_ascii=False)
+                fout.write(usr_json+'\n')
+                fout.close()
 
-            usr_info = {'id': tmp_usr, 'name': dict_id_name[tmp_usr], 'follow': info_follow, 'followed': info_followed, 'movie': movie_list, 'book': book_list}
-            usr_json = json.dumps(usr_info, ensure_ascii=False)
-            fout.write(usr_json+'\n')
-            fout.close()
-
-            fout = codecs.open('usr_info.txt', 'a', 'utf_8_sig')
-            print "local:", len(info_follow), len(info_followed), len(book_list), len(movie_list)
-            print "total:", len(visited_user), len(visited_movie), len(visited_book)
+                fout = codecs.open('usr_info.txt', 'a', 'utf_8_sig')
+                print "local:", len(info_follow), len(info_followed), len(book_list), len(movie_list)
+                print "total:", len(visited_user), len(visited_movie), len(visited_book)
 
 
 def yudu():
@@ -283,9 +324,13 @@ def yudu():
         for y in tmp['book']:
             visited_book.add(y['id'])
 
+    tmp_list = []
     for x in allUsr:
         if x not in visited_user:
-            usr.put(x)
+            tmp_list.append(x)
+    random.shuffle(tmp_list)
+    for x in tmp_list:
+        usr.put(x)
     f.close()
     print '预处理完毕'
     print len(visited_user),usr._qsize(),len(visited_book),len(visited_movie)
