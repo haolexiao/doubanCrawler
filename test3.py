@@ -27,7 +27,7 @@ dict_id_name = {}
 
 main_url = 'https://www.douban.com'
 raw_cookies = [
-   'll="108288"; bid=mCEK2EAt_J4; __yadk_uid=Z914VtOVBusejcOvRDCF5zwkGYe8uNYJ; push_noty_num=0; push_doumail_num=0; __utmc=30149280; __utmz=30149280.1517854308.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utmv=30149280.17361; ap=1; ps=y; ct=y; __utma=30149280.944334073.1517854308.1517887175.1518091831.5; _pk_ref.100001.8cb4=%5B%22%22%2C%22%22%2C1518101756%2C%22https%3A%2F%2Faccounts.douban.com%2Fsafety%2Funlock_sms%2Fresetpassword%3Fconfirmation%3D92baa119df4d0a89%26alias%3D%22%5D; _pk_ses.100001.8cb4=*; dbcl2="173611196:1ZSDfofOx30"; ck=tlHg; _pk_id.100001.8cb4=a252f16f265a0f30.1517854257.12.1518101765.1518093275.'
+ 'll="108288"; bid=mCEK2EAt_J4; __yadk_uid=Z914VtOVBusejcOvRDCF5zwkGYe8uNYJ; push_noty_num=0; push_doumail_num=0; __utmc=30149280; __utmv=30149280.17361; ap=1; ps=y; ct=y; _ga=GA1.2.944334073.1517854308; _gid=GA1.2.68436620.1518107425; __utma=30149280.944334073.1517854308.1518107425.1518107712.7; __utmz=30149280.1518107712.7.3.utmcsr=baidu|utmccn=(organic)|utmcmd=organic; _vwo_uuid_v2=D2C5DACDF1567A8998DB70006982EAEC6|7eaece84d0784e514e9c8a5c3dc8675d; gr_user_id=07719cc5-2e3f-4e10-ab35-780bccd30ad2; _pk_ref.100001.8cb4=%5B%22%22%2C%22%22%2C1518155606%2C%22https%3A%2F%2Faccounts.douban.com%2Fsafety%2Funlock_sms%2Fresetpassword%3Fconfirmation%3D4f6a4df8bb234c1b%26alias%3D%22%5D; _pk_ses.100001.8cb4=*; dbcl2="173611196:KjGKyTXIpac"; ck=dYHa; _pk_id.100001.8cb4=a252f16f265a0f30.1517854257.16.1518155615.1518143870.'
 ]
 
 headers = [
@@ -40,16 +40,16 @@ def get_proxies():
     pass
 
 def pause():
-    time.sleep(5 + 3*random.random())
+    time.sleep(1 + 3*random.random())
     return
 
 
-def fobbiden_check(tree, original_url, cookie):
+def fobbiden_check(tree, original_url, session):
     title_name = tree.xpath('head/title/text()')
     while title_name[0] == u'403 Forbidden':
         print '403 Forbidden'
         proxies = get_proxies()
-        page_follow = requests.get(original_url, cookies=cookie, proxies=proxies)
+        page_follow = session.get(original_url, proxies=proxies)
 
 
 
@@ -86,7 +86,7 @@ def fobbiden_check(tree, original_url, cookie):
             tree = page
 
 
-def follow_crawler(url, info_follow, cookie, header, usr_queue, dict_id_name, tmp_usr = ""):
+def follow_crawler(url, info_follow, session,  usr_queue, dict_id_name, tmp_usr = ""):
     if url[0] == '/':
         url = main_url+url
     print url
@@ -96,20 +96,24 @@ def follow_crawler(url, info_follow, cookie, header, usr_queue, dict_id_name, tm
         #hea = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/537.36'}
 
         #page_follow = requests.get(url, cookies=cookie, proxies=proxies)
-        page_follow = requests.get(url, cookies=cookie, headers=header)
+        page_follow = session.get(url)
         tree = html.fromstring(page_follow.text)
         print tree.xpath('head/title/text()')[0].strip()
         if tmp_usr != "":
             dict_id_name[tmp_usr] = tree.xpath('head/title/text()')[0].strip()[:-4]
 
-        fobbiden_check(tree, url, cookie)
+        fobbiden_check(tree, url, session)
         intro_raw = tree.xpath('//dl[@class="obu"]/dd/a')
         #print tree.xpath('head/title/text()')[0]
     except:
         print page_follow.text
 
-    #count_number = tree.xpath('//span[@class="count"]/text()')
-    #print "关注数量有"+re.findall(r"\d*", count_number)
+
+    count_string = tree.xpath('//div[@class="info"]/h1/text()')[0]
+    count_number = int(re.findall(r"\d+\.?\d*", count_string)[-1])
+    print "关注数量有",count_number
+    #if count_number >10000:
+        #return ""
 
     for x in intro_raw:
         tmp_follow_name = x.xpath('@href')[0].split('/')[4]
@@ -127,28 +131,35 @@ def follow_crawler(url, info_follow, cookie, header, usr_queue, dict_id_name, tm
         return ''
 
     
-def book_crawler(url, cookie, header, visited_book, book_list):
+def book_crawler(url, session, visited_book, book_list):
     if url[0] == '/':
         url = main_url+url
     print url
     try:
-        page_book = requests.get(url, cookies=cookie, headers=header)
+        page_book = session.get(url)
         tree = html.fromstring(page_book.text)
-        fobbiden_check(tree, url, cookie)
+        fobbiden_check(tree, url, session)
 
-        intro_raw = tree.xpath('//li[@class="subject-item"]/div[@class="info"]')
+        #intro_raw = tree.xpath('//li[@class="subject-item"]/div[@class="info"]')
+        intro_raw = tree.xpath('//li[@class="item"]/div[@class="item-show"]')
+
     except:
         print page_book.text
 
     for x in intro_raw:
-        tmp_book_id = x.xpath('h2/a/@href')[0].split('/')[4]
-        book_title = x.xpath('h2/a/@title')[0]
-        rating = x.xpath('div[@class="short-note"]/div/span/@class')[0]
+        tmp_book_id = x.xpath('div[@class = "title"]/a/@href')[0].split('/')[4]
+
+        book_title = x.xpath('div[@class = "title"]/a/text()')[0].strip()
+        #rating = x.xpath('div[@class="short-note"]/div/span/@class')[0]
+        rating = x.xpath('div[@class="date"]/span/@class')
+        if len(rating) == 0:
+            continue
+        rating = rating[0]
         #print book_title
 
         if rating[0] == 'r':
             #print x.xpath('h2/a/@title')[0]
-            date = x.xpath('div[@class="short-note"]/div/span[@class="date"]/text()')[0].split('\n')[0]
+            date = x.xpath('div[@class="date"]/text()')[1].strip()
             rating = int(rating[6])
             visited_book.add(tmp_book_id)
 
@@ -163,15 +174,15 @@ def book_crawler(url, cookie, header, visited_book, book_list):
     else:
         return ''
 
-def movie_crawler(url,cookie, header, visited_movie, movie_list):
+def movie_crawler(url,session, visited_movie, movie_list):
     if url[0] == '/':
         url = main_url+url
     print url
     try:
-        page_movie = requests.get(url, cookies=cookie, headers=header)
+        page_movie = session.get(url)
         tree = html.fromstring(page_movie.text)
-        fobbiden_check(tree, url, cookie)
-        intro_raw = tree.xpath('//div[@class="item"]/div[@class="info"]')
+        fobbiden_check(tree, url, session)
+        intro_raw = tree.xpath('//li[@class="item"]/div[@class="item-show"]')
     except:
         print page_movie.text
 
@@ -180,14 +191,17 @@ def movie_crawler(url,cookie, header, visited_movie, movie_list):
         #print x.text
         #print x.xpath('ul/li[@class="title"]/a/@href')
 
-        tmp_movie_id = x.xpath('ul/li[@class="title"]/a/@href')[0].split('/')[4]
-        movie_title = x.xpath('ul/li[@class="title"]/a/em/text()')[0]
-        #print movie_title
+        tmp_movie_id = x.xpath('div[@class = "title"]/a/@href')[0].split('/')[4]
 
-        rating = x.xpath('ul/li[3]/span/@class')[0]
+        movie_title = x.xpath('div[@class = "title"]/a/text()')[0].strip()
+        # rating = x.xpath('div[@class="short-note"]/div/span/@class')[0]
+        rating = x.xpath('div[@class="date"]/span/@class')
+        if len(rating) == 0:
+            continue
+        rating = rating[0]
         if rating[0] == 'r':
             #print x.xpath('h2/a/@title')[0]
-            date = x.xpath('ul/li/span[@class="date"]/text()')[0].split('\n')[0]
+            date = x.xpath('div[@class="date"]/text()')[1].strip()
             rating = int(rating[6])
             visited_movie.add(tmp_movie_id)
             #print date
@@ -209,7 +223,7 @@ def SelectCookie():
     for line in cookies.split(';'):
         key, value = line.split("=", 1)
         cookie[key] = value #一些格式化操作，用来装载cookies
-    return cookie,headers[0]
+    return cookie, headers[0]
 
 def crawler():
     #豆瓣模拟登录，最简单的是cookie，会这个方法，80%的登录网站可以搞定
@@ -226,8 +240,15 @@ def crawler():
 
 
     fout = codecs.open('usr_info.txt', 'a', 'utf_8_sig')
+    session = requests.Session()
+    cookie, header = SelectCookie()
+    #session.get('https://www.douban.com/people/171996611/contacts', cookies=cookie, headers = header)
+    cookie_jar = requests.utils.cookiejar_from_dict(cookie, cookiejar=None, overwrite=True)
+    session.cookies = cookie_jar
+    session.headers['User-Agent'] = header['User-Agent']
     while not usr.empty():
-        tmp_usr = usr.get();
+        print time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
+        tmp_usr = usr.get()
         if tmp_usr not in visited_user:
             print tmp_usr
             visited_user.add(tmp_usr)
@@ -241,30 +262,32 @@ def crawler():
 
             url_follow = url['follow']+tmp_usr+'/contacts'
             url_followed = url['follow']+tmp_usr+'/rev_contacts'
-            url_movie = url['movie']+tmp_usr+'/collect'
-            url_book = url['book']+tmp_usr+'/collect'
+            url_movie = url['movie']+tmp_usr+'/collect'+'?sort=time&start=0&filter=all&mode=list&tags_sort=count'
+            url_book = url['book']+tmp_usr+'/collect'+'?sort=time&start=0&filter=all&mode=list&tags_sort=count'
 
             try:
                 # 处理关注者
                 while url_follow != '':
                     cookie, header = SelectCookie()
-                    url_follow = follow_crawler(url_follow, info_follow, cookie, header, usr, dict_id_name,tmp_usr)
+                    #url_follow = follow_crawler(url_follow, info_follow, cookie, header, usr, dict_id_name,tmp_usr)
+                    url_follow = follow_crawler(url_follow, info_follow, session, usr, dict_id_name, tmp_usr)
+
 
 
                 #处理被关注者
                 while url_followed != '':
                     cookie, header = SelectCookie()
-                    url_followed = follow_crawler(url_followed, info_followed, cookie, header, usr, dict_id_name)
+                    url_followed = follow_crawler(url_followed, info_followed, session,  usr, dict_id_name)
 
                 #处理看过的图书及其评分
                 while url_book != '':
                     cookie, header = SelectCookie()
-                    url_book = book_crawler(url_book, cookie, header, visited_book, book_list)
+                    url_book = book_crawler(url_book, session,  visited_book, book_list)
 
                 #处理看过的电影及其评分
                 while url_movie != '':
                     cookie, header = SelectCookie()
-                    url_movie = movie_crawler(url_movie, cookie, header, visited_movie, movie_list)
+                    url_movie = movie_crawler(url_movie, session,  visited_movie, movie_list)
             except:
                 print '！！！！！！！！！！！出现异常！！！！！！！！！！'
                 usr_info = {'id': tmp_usr, 'name': dict_id_name[tmp_usr]}
