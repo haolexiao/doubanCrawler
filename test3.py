@@ -27,9 +27,8 @@ dict_id_name = {}
 
 main_url = 'https://www.douban.com'
 raw_cookies = [
- 'll="108288"; bid=mCEK2EAt_J4; __yadk_uid=Z914VtOVBusejcOvRDCF5zwkGYe8uNYJ; push_noty_num=0; push_doumail_num=0; __utmc=30149280; __utmv=30149280.17361; ap=1; ps=y; ct=y; _ga=GA1.2.944334073.1517854308; _gid=GA1.2.68436620.1518107425; __utma=30149280.944334073.1517854308.1518107425.1518107712.7; __utmz=30149280.1518107712.7.3.utmcsr=baidu|utmccn=(organic)|utmcmd=organic; _vwo_uuid_v2=D2C5DACDF1567A8998DB70006982EAEC6|7eaece84d0784e514e9c8a5c3dc8675d; gr_user_id=07719cc5-2e3f-4e10-ab35-780bccd30ad2; _pk_ref.100001.8cb4=%5B%22%22%2C%22%22%2C1518155606%2C%22https%3A%2F%2Faccounts.douban.com%2Fsafety%2Funlock_sms%2Fresetpassword%3Fconfirmation%3D4f6a4df8bb234c1b%26alias%3D%22%5D; _pk_ses.100001.8cb4=*; dbcl2="173611196:KjGKyTXIpac"; ck=dYHa; _pk_id.100001.8cb4=a252f16f265a0f30.1517854257.16.1518155615.1518143870.'
+'ll="118251"; bid=WdQdSzQdVI0; ps=y; __yadk_uid=GH0bXrJBfQXD75rnaSDjfvdDXZMsDkCr; push_noty_num=0; push_doumail_num=0; ap=1; _pk_ref.100001.8cb4=%5B%22%22%2C%22%22%2C1518459839%2C%22https%3A%2F%2Faccounts.douban.com%2Fsafety%2Funlock_sms%2Fresetpassword%3Fconfirmation%3D6013d984b0986bd8%26alias%3D%22%5D; _pk_ses.100001.8cb4=*; dbcl2="173611196:wuodvLTaCyw"; ck=kV4I; _pk_id.100001.8cb4=0ffb5433cb43cd8c.1518277897.9.1518459852.1518446426.'
 ]
-
 headers = [
     {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36'},
@@ -37,10 +36,16 @@ headers = [
         'User-Agent': 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 10.0; WOW64; Trident/7.0; Touch; .NET4.0C; .NET4.0E; .NET CLR 2.0.50727; .NET CLR 3.0.30729; .NET CLR 3.5.30729; Tablet PC 2.0)'}
 ]
 def get_proxies():
-    pass
+    page = requests.get('http://api.ip.data5u.com/dynamic/get.html?order=61ea3a0c5266d395453adee78637dfe4&sep=3')
+    tree = html.fromstring(page.text)
+    ip_port = tree.text.strip()
+    return {'http': ip_port, 'https': ip_port}
+    #return {}
+
+
 
 def pause():
-    time.sleep(1 + 3*random.random())
+    time.sleep(1+ 30*random.random())
     return
 
 
@@ -96,7 +101,7 @@ def follow_crawler(url, info_follow, session,  usr_queue, dict_id_name, tmp_usr 
         #hea = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/537.36'}
 
         #page_follow = requests.get(url, cookies=cookie, proxies=proxies)
-        page_follow = session.get(url)
+        page_follow = session.get(url, timeout=10)
         tree = html.fromstring(page_follow.text)
         print tree.xpath('head/title/text()')[0].strip()
         if tmp_usr != "":
@@ -106,14 +111,17 @@ def follow_crawler(url, info_follow, session,  usr_queue, dict_id_name, tmp_usr 
         intro_raw = tree.xpath('//dl[@class="obu"]/dd/a')
         #print tree.xpath('head/title/text()')[0]
     except:
-        print page_follow.text
+        print '页面获取失败，正在重新获取代理ip'
+        session.proxies = get_proxies()
+        return url
 
 
     count_string = tree.xpath('//div[@class="info"]/h1/text()')[0]
     count_number = int(re.findall(r"\d+\.?\d*", count_string)[-1])
     print "关注数量有",count_number
-    #if count_number >10000:
-        #return ""
+
+    if count_number >10000:
+        return 'error'
 
     for x in intro_raw:
         tmp_follow_name = x.xpath('@href')[0].split('/')[4]
@@ -136,7 +144,7 @@ def book_crawler(url, session, visited_book, book_list):
         url = main_url+url
     print url
     try:
-        page_book = session.get(url)
+        page_book = session.get(url, timeout=10)
         tree = html.fromstring(page_book.text)
         fobbiden_check(tree, url, session)
 
@@ -144,7 +152,9 @@ def book_crawler(url, session, visited_book, book_list):
         intro_raw = tree.xpath('//li[@class="item"]/div[@class="item-show"]')
 
     except:
-        print page_book.text
+        print '页面获取失败，正在重新获取代理ip'
+        session.proxies = get_proxies()
+        return url
 
     for x in intro_raw:
         tmp_book_id = x.xpath('div[@class = "title"]/a/@href')[0].split('/')[4]
@@ -179,12 +189,14 @@ def movie_crawler(url,session, visited_movie, movie_list):
         url = main_url+url
     print url
     try:
-        page_movie = session.get(url)
+        page_movie = session.get(url, timeout=10)
         tree = html.fromstring(page_movie.text)
         fobbiden_check(tree, url, session)
         intro_raw = tree.xpath('//li[@class="item"]/div[@class="item-show"]')
     except:
-        print page_movie.text
+        print '页面获取失败，正在重新获取代理ip'
+        session.proxies = get_proxies()
+        return url
 
 
     for x in intro_raw:
@@ -246,6 +258,7 @@ def crawler():
     cookie_jar = requests.utils.cookiejar_from_dict(cookie, cookiejar=None, overwrite=True)
     session.cookies = cookie_jar
     session.headers['User-Agent'] = header['User-Agent']
+    session.proxies = get_proxies()
     while not usr.empty():
         print time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
         tmp_usr = usr.get()
@@ -271,13 +284,15 @@ def crawler():
                     cookie, header = SelectCookie()
                     #url_follow = follow_crawler(url_follow, info_follow, cookie, header, usr, dict_id_name,tmp_usr)
                     url_follow = follow_crawler(url_follow, info_follow, session, usr, dict_id_name, tmp_usr)
-
-
+                if url_follow == 'error':
+                    continue
 
                 #处理被关注者
                 while url_followed != '':
                     cookie, header = SelectCookie()
                     url_followed = follow_crawler(url_followed, info_followed, session,  usr, dict_id_name)
+                if url_followed == 'error':
+                    continue
 
                 #处理看过的图书及其评分
                 while url_book != '':
