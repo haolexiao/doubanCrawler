@@ -11,8 +11,8 @@ headers = {
 }
 gap = 5000
 mark = 0
-fout = codecs.open('test.csv', 'r', encoding='utf-8')
-def crawler(i,zz):
+fout = codecs.open('test.csv', 'a', encoding='utf-8')
+def crawler(i):
     try:
         pageURL = url+str(i)
         page = requests.get(pageURL,headers = headers)
@@ -29,15 +29,15 @@ def crawler(i,zz):
 
 
 try:
-    i = 0
-    while i<5000:
+    i = 5000
+    while i<10000:
         if mark == 1:
             i = i+500
             mark = 0
         for k in xrange(8):
-            thread.start_new_thread(crawler, (i*8+k,0,))
-        i = i+8
-        time.sleep(10)
+            thread.start_new_thread(crawler, (i*8+k,))
+        i = i+1
+        time.sleep(6)
 
 except:
     print "Error: unable to start thread"

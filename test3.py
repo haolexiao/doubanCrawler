@@ -9,6 +9,8 @@ import Queue
 import json
 
 import time
+
+import winsound
 from lxml import html    #这里我们用lxml，也就是xpath的方法
 
 
@@ -27,7 +29,7 @@ dict_id_name = {}
 
 main_url = 'https://www.douban.com'
 raw_cookies = [
-'ll="118251"; bid=WdQdSzQdVI0; ps=y; __yadk_uid=GH0bXrJBfQXD75rnaSDjfvdDXZMsDkCr; push_noty_num=0; push_doumail_num=0; ap=1; _pk_ref.100001.8cb4=%5B%22%22%2C%22%22%2C1518459839%2C%22https%3A%2F%2Faccounts.douban.com%2Fsafety%2Funlock_sms%2Fresetpassword%3Fconfirmation%3D6013d984b0986bd8%26alias%3D%22%5D; _pk_ses.100001.8cb4=*; dbcl2="173611196:wuodvLTaCyw"; ck=kV4I; _pk_id.100001.8cb4=0ffb5433cb43cd8c.1518277897.9.1518459852.1518446426.'
+'ll="118251"; bid=DeWGaaXkNVQ; ps=y; __yadk_uid=Zkwqg9xJGcAA6SfPyTwOUexmjX5EjtRp; push_noty_num=0; push_doumail_num=0; _pk_ref.100001.8cb4=%5B%22%22%2C%22%22%2C1519231418%2C%22https%3A%2F%2Faccounts.douban.com%2Fsafety%2Funlock_sms%2Fresetpassword%3Fconfirmation%3Db070fdcd23be3708%26alias%3D%22%5D; _pk_ses.100001.8cb4=*; dbcl2="173611196:1rgP9WH9+DA"; ck=XuI5; _pk_id.100001.8cb4=f2443ab5bc95ec1d.1519209920.4.1519231436.1519223066.'
 ]
 headers = [
     {
@@ -45,7 +47,7 @@ def get_proxies():
 
 
 def pause():
-    time.sleep(1+ 30*random.random())
+    time.sleep(5+5*random.random())
     return
 
 
@@ -104,6 +106,9 @@ def follow_crawler(url, info_follow, session,  usr_queue, dict_id_name, tmp_usr 
         page_follow = session.get(url, timeout=10)
         tree = html.fromstring(page_follow.text)
         print tree.xpath('head/title/text()')[0].strip()
+        if tree.xpath('head/title/text()')[0].strip() == u'登录豆瓣':
+            winsound.Beep(600, 10000)
+
         if tmp_usr != "":
             dict_id_name[tmp_usr] = tree.xpath('head/title/text()')[0].strip()[:-4]
 
